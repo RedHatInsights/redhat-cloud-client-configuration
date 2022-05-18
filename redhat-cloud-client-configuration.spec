@@ -14,6 +14,7 @@ Source4: 80-insights-register.preset
 BuildArch:      noarch
 
 Requires:      insights-client
+Requires:      subscription-manager
 BuildRequires:      systemd
 
 %description
@@ -44,6 +45,28 @@ install -m644 %{SOURCE4} -t %{buildroot}%{_presetdir}/
 %systemd_post insights-unregister.path
 %systemd_post 80-insights-register.preset
 
+# Make sure that rhsmcertd.service is enabled and running
+%systemd_post rhsmcertd.service
+if [ $1 -eq 1 ]; then
+    # Try to get current value of auto-registration in rhsm.conf
+    subscription-manager config --list | grep -q '^[ \t]*auto_registration[ \t]*=[ \t]*1'
+    if [ $? -eq 0 ]; then
+        auto_reg_already_enabled=1
+    else
+        auto_reg_already_enabled=0
+    fi
+    if [ $auto_reg_already_enabled -eq 0 ]; then
+        # Save original rhsm.conf
+        echo -e "#\n# Automatic backup of rhsm.conf created by %{name} installation script\n#\n" \
+            > /etc/rhsm/rhsm.conf.cloud_save
+        cat /etc/rhsm/rhsm.conf >> /etc/rhsm/rhsm.conf.cloud_save
+        # Enable auto-registration in rhsm.conf
+        subscription-manager config --rhsmcertd.auto_registration=1
+        # Restart rhsmcertd to reload configuration file
+        /bin/systemctl restart rhsmcertd.service
+    fi
+fi
+
 %preun
 if [ $1 -eq 0 ]; then
     # Packager removal, unmask register if exists
@@ -55,6 +78,22 @@ fi
 %postun
 %systemd_postun insights-register.path
 %systemd_postun insights-unregister.path
+
+if [ $1 -eq 0 ]; then
+    if [ -f /etc/rhsm/rhsm.conf.cloud_save ]; then
+        # When auto-registration was originally disabled and we had
+        # to enable it during installation of this RPM, then disable it
+        # again during removal of RPM package to restore original state.
+        grep -q '^[ \t]*auto_registration[ \t]*=[ \t]*0' /etc/rhsm/rhsm.conf.cloud_save
+        if [ $? -eq 0 ]; then
+            subscription-manager config --rhsmcertd.auto_registration=0
+            # Restart rhsmcertd to propagate change in rhsm.conf
+            %systemd_postun_with_restart rhsmcertd.service
+        fi
+        # Script should clean up after itself
+        rm -f /etc/rhsm/rhsm.conf.cloud_save
+    fi
+fi
 
 %clean
 rm -rf %{buildroot}
