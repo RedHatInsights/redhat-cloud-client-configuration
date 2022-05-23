@@ -19,6 +19,7 @@ jobs:
         python3 -m venv tito_venv
         source tito_venv/bin/activate
         pip install tito rpm
+        sudo apt-cache search systemd
 
     - name: Build tito
       run: |
