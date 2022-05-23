@@ -15,7 +15,8 @@ jobs:
 
     - name: Install python3-rpm, create venv and install tito
       run: |
-        sudo apt-get install python3-rpm
+        sudo apt-get install python3-rpm systemd
+        sudo apt list --installed | grep systemd
         python3 -m venv tito_venv
         source tito_venv/bin/activate
         pip install tito rpm
