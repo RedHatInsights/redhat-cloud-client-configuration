@@ -16,6 +16,7 @@ BuildArch:      noarch
 
 Requires:      insights-client
 Requires:      subscription-manager
+Requires:      rhc
 BuildRequires:      systemd
 
 %description
