@@ -17,7 +17,7 @@ BuildArch:      noarch
 Requires:      insights-client
 Requires:      subscription-manager
 Requires:      rhc
-BuildRequires:      systemd
+BuildRequires: systemd
 
 %description
 Configure client autoregistration for cloud environments
@@ -43,7 +43,7 @@ install -d %{buildroot}%{_presetdir}
 install -m644 %{SOURCE4} -t %{buildroot}%{_presetdir}/
 
 # rhcd
-install -D -m644 rhcd-override.conf %{buildroot}%{_unitdir}/rhcd.service.d/rhcd-override.conf
+install -D -m644 %{SOURCE5} %{buildroot}%{_unitdir}/rhcd.service.d/rhcd-override.conf
 
 %post
 %systemd_post insights-register.path
