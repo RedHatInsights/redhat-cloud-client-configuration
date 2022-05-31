@@ -1,7 +1,7 @@
 Name:           redhat-cloud-client-configuration
-Version:        0.1
+Version:        1
 Release:        1%{?dist}
-Summary:        RedHat cloud client configuration
+Summary:        Red Hat cloud client configuration
 License:        GPLv2+
 URL:            https://github.com/RedHatInsights/redhat-cloud-client-configuration
 
@@ -9,7 +9,8 @@ Source0: insights-register.path.in
 Source1: insights-register.service.in
 Source2: insights-unregister.path.in
 Source3: insights-unregister.service.in
-Source4: 80-insights-register.preset 
+Source4: 80-insights-register.preset
+Source5: rhcd-override.conf
 
 BuildArch:      noarch
 
@@ -18,7 +19,7 @@ Requires:      subscription-manager
 BuildRequires:      systemd
 
 %description
-Insights client autoregistration for cloud environments
+Configure client autoregistration for cloud environments
 
 %prep
 # we have no source
@@ -39,6 +40,9 @@ install -m644 insights-unregister.path    %{buildroot}%{_unitdir}/
 install -m644 insights-unregister.service %{buildroot}%{_unitdir}/
 install -d %{buildroot}%{_presetdir}
 install -m644 %{SOURCE4} -t %{buildroot}%{_presetdir}/
+
+# rhcd
+install -m644 rhcd-override.conf %{buildroot}%{_unitdir}/rhcd.service.d/rhcd-override.conf
 
 %post
 %systemd_post insights-register.path
@@ -95,9 +99,6 @@ if [ $1 -eq 0 ]; then
     fi
 fi
 
-%clean
-rm -rf %{buildroot}
-
 
 %files
 %{_unitdir}/*
@@ -105,5 +106,9 @@ rm -rf %{buildroot}
 
 
 %changelog
-* Tue May 17 2022 Alba Hita Catala <ahitacat@redhat.com> - 0.1.1
-- insights-client autoresitration
+* Tue May 31 2022 Link Dupont <link@redhat.com> - 1-1
+- fix up some spec file descriptions
+- add override to automatically activate rhcd
+
+* Tue May 17 2022 Alba Hita Catala <ahitacat@redhat.com> - 1-1
+- insights-client autoregistration
