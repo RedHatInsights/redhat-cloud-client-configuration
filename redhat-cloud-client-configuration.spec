@@ -11,6 +11,9 @@ Source2: insights-unregister.path.in
 Source3: insights-unregister.service.in
 Source4: 80-insights-register.preset
 Source5: rhcd-override.conf
+Source6: rhcd.path.in
+Source7: rhcd-stop.path.in
+Source8: rhcd-stop.service.in
 
 BuildArch:      noarch
 
@@ -27,10 +30,16 @@ Configure client autoregistration for cloud environments
 
 
 %build
+# insights-client
 sed -e 's|@sysconfdir@|%{_sysconfdir}|g' %{SOURCE0} > insights-register.path
 sed -e 's|@bindir@|%{_bindir}|g' %{SOURCE1} > insights-register.service
 sed -e 's|@sysconfdir@|%{_sysconfdir}|g' %{SOURCE2} > insights-unregister.path
 sed -e 's|@sysconfdir@|%{_sysconfdir}|g' -e 's|@bindir@|%{_bindir}|g' %{SOURCE3} > insights-unregister.service
+
+# rhcd
+sed -e 's|@sysconfdir@|%{_sysconfdir}|g' %{SOURCE6} > rhcd.path
+sed -e 's|@sysconfdir@|%{_sysconfdir}|g' %{SOURCE7} > rhcd-stop.path
+sed -e 's|@sysconfdir@|%{_sysconfdir}|g' %{SOURCE8} > rhcd-stop.service
 
 %install
 # insights-client
@@ -44,10 +53,15 @@ install -m644 %{SOURCE4} -t %{buildroot}%{_presetdir}/
 
 # rhcd
 install -D -m644 %{SOURCE5} %{buildroot}%{_unitdir}/rhcd.service.d/rhcd-override.conf
+install -D -m644 %{SOURCE6} %{buildroot}%{_unitdir}/
+install -D -m644 %{SOURCE7} %{buildroot}%{_unitdir}/
+install -D -m644 %{SOURCE8} %{buildroot}%{_unitdir}/
 
 %post
 %systemd_post insights-register.path
 %systemd_post insights-unregister.path
+%systemd_post rhcd.path
+%systemd_post rhcd-stop.path
 %systemd_post 80-insights-register.preset
 
 # Make sure that rhsmcertd.service is enabled and running
@@ -75,14 +89,19 @@ fi
 %preun
 if [ $1 -eq 0 ]; then
     # Packager removal, unmask register if exists
-    /bin/systemctl unmask --now insights-register.path > /dev/null 2>&1 || : 
+    /bin/systemctl unmask --now insights-register.path > /dev/null 2>&1 || :
+    /bin/systemctl unmask --now rhcd.path > /dev/null 2>&1 || :
 fi
 %systemd_preun insights-register.path
 %systemd_preun insights-unregister.path
+%systemd_preun rhcd.path
+%systemd_preun rhcd-stop.path
 
 %postun
 %systemd_postun insights-register.path
 %systemd_postun insights-unregister.path
+%systemd_postun rhcd.path
+%systemd_postun rhcd-stop.path
 
 if [ $1 -eq 0 ]; then
     if [ -f /etc/rhsm/rhsm.conf.cloud_save ]; then

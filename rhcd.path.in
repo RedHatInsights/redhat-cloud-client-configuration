@@ -1,11 +1,19 @@
-# This file is part of redhat-cloud-client-configuration.
+# This file is part of rhcd.
 #
 # Any changes made to this file will be overwritten during a software update. To
 # override a parameter in this file, create a drop-in file, typically located at
-# /etc/systemd/system/insights-register.path.d/override.conf. Put the desired
+# /etc/systemd/system/rhcd.path.d/override.conf. Put the desired
 # overrides in that file and reload systemd.
 #
 # For more information about systemd drop-in files, see systemd.unit(5).
 
+
 [Unit]
-ExecStopPost=systemctl mask --now rhcd.path
+Description=Automatically start rhcd with path watch
+Documentation=man:rhcd(8)
+
+[Path]
+PathExists=@sysconfdir@/pki/consumer/cert.pem
+
+[Install]
+WantedBy=multi-user.target
