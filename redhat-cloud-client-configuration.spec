@@ -10,7 +10,6 @@ Source1: insights-register.service.in
 Source2: insights-unregister.path.in
 Source3: insights-unregister.service.in
 Source4: 80-insights-register.preset
-Source5: rhcd-override.conf
 Source6: rhcd.path.in
 Source7: rhcd-stop.path.in
 Source8: rhcd-stop.service.in
@@ -52,7 +51,6 @@ install -d %{buildroot}%{_presetdir}
 install -m644 %{SOURCE4} -t %{buildroot}%{_presetdir}/
 
 # rhcd
-install -D -m644 %{SOURCE5} %{buildroot}%{_unitdir}/rhcd.service.d/rhcd-override.conf
 install -D -m644 %{SOURCE6} %{buildroot}%{_unitdir}/
 install -D -m644 %{SOURCE7} %{buildroot}%{_unitdir}/
 install -D -m644 %{SOURCE8} %{buildroot}%{_unitdir}/
