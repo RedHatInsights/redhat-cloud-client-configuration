@@ -51,9 +51,9 @@ install -d %{buildroot}%{_presetdir}
 install -m644 %{SOURCE4} -t %{buildroot}%{_presetdir}/
 
 # rhcd
-install -D -m644 %{SOURCE6} %{buildroot}%{_unitdir}/
-install -D -m644 %{SOURCE7} %{buildroot}%{_unitdir}/
-install -D -m644 %{SOURCE8} %{buildroot}%{_unitdir}/
+install -D -m644 rhcd.path %{buildroot}%{_unitdir}/
+install -D -m644 rhcd-stop.path %{buildroot}%{_unitdir}/
+install -D -m644 rhcd-stop.service %{buildroot}%{_unitdir}/
 
 %post
 %systemd_post insights-register.path
