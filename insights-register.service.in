@@ -25,4 +25,4 @@ TasksMax=300
 BlockIOWeight=100
 ExecStartPost=-/bin/bash -c "echo 2G >/dev/null 2>&1 > /sys/fs/cgroup/memory/system.slice/insights-register.service/memory.memsw.limit_in_bytes"
 ExecStartPost=-/bin/bash -c "echo 1G >/dev/null 2>&1 > /sys/fs/cgroup/memory/system.slice/insights-register.service/memory.soft_limit_in_bytes"
-ExecStopPost=systemctl mask --now insights-register.path
+ExecStopPost=/bin/systemctl mask --now insights-register.path
