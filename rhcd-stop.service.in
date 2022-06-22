@@ -15,6 +15,6 @@ ConditionPathExists=!@sysconfdir@/pki/consumer/cert.pem
 
 [Service]
 Type=simple
-ExecStart=systemctl stop rhcd.service
-ExecStopPost=systemctl unmask --now rhcd.path
-ExecStopPost=systemctl start rhcd.path
+ExecStart=/bin/systemctl stop rhcd.service
+ExecStopPost=/bin/systemctl unmask --now rhcd.path
+ExecStopPost=/bin/systemctl start rhcd.path
