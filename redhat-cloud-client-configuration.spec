@@ -77,22 +77,44 @@ install -D -m644 rhcd-stop.service %{buildroot}%{_unitdir}/
 
 # Make sure that rhsmcertd.service is enabled and running
 %systemd_post rhsmcertd.service
+# Run following block only during installation (not during update)
 if [ $1 -eq 1 ]; then
     # Try to get current value of auto-registration in rhsm.conf
     subscription-manager config --list | grep -q '^[ \t]*auto_registration[ \t]*=[ \t]*1'
     if [ $? -eq 0 ]; then
-        auto_reg_already_enabled=1
+        auto_reg_enabled=1
     else
-        auto_reg_already_enabled=0
+        auto_reg_enabled=0
     fi
-    if [ $auto_reg_already_enabled -eq 0 ]; then
-        # Save original rhsm.conf
+
+    # Try to get current value of manage_repos
+    subscription-manager config --list | grep -q '^[ \t]*manage_repos[ \t]*=[ \t]*0'
+    if [ $? -eq 0 ]; then
+        manage_repos_enabled=0
+    else
+        manage_repos_enabled=1
+    fi
+
+    # When we are going to change any configuration value, then save original rhsm.conf
+    if [ $auto_reg_enabled -eq 0 -o $manage_repos_enabled -eq 1 ]; then
         echo -e "#\n# Automatic backup of rhsm.conf created by %{name} installation script\n#\n" \
             > /etc/rhsm/rhsm.conf.cloud_save
         cat /etc/rhsm/rhsm.conf >> /etc/rhsm/rhsm.conf.cloud_save
-        # Enable auto-registration in rhsm.conf
+    fi
+
+    # Enable auto-registration in rhsm.conf
+    if [ $auto_reg_enabled -eq 0 ]; then
         subscription-manager config --rhsmcertd.auto_registration=1
-        # Restart rhsmcertd to reload configuration file
+    fi
+
+    # Disable management of redhat.repo on systems running in
+    # public cloud, because content is provided by RHUI
+    if [ $manage_repos_enabled -eq 1 ]; then
+        subscription-manager config --rhsm.manage_repos=0
+    fi
+
+    # Restart rhsmcertd to reload configuration file, when it is necessary
+    if [ $auto_reg_enabled -eq 0 -o $manage_repos_enabled -eq 1 ]; then
         /bin/systemctl restart rhsmcertd.service
     fi
 fi
@@ -124,15 +146,29 @@ fi
 
 if [ $1 -eq 0 ]; then
     if [ -f /etc/rhsm/rhsm.conf.cloud_save ]; then
+        rhsmcertd_restart_required=0
+
         # When auto-registration was originally disabled and we had
         # to enable it during installation of this RPM, then disable it
         # again during removal of RPM package to restore original state.
         grep -q '^[ \t]*auto_registration[ \t]*=[ \t]*0' /etc/rhsm/rhsm.conf.cloud_save
         if [ $? -eq 0 ]; then
             subscription-manager config --rhsmcertd.auto_registration=0
-            # Restart rhsmcertd to propagate change in rhsm.conf
+            rhsmcertd_restart_required=1
+        fi
+
+        # When managing was originally enabled, then enable it again
+        grep -q '^[ \t]*manage_repos[ \t]*=[ \t]*1' /etc/rhsm/rhsm.conf.cloud_save
+        if [ $? -eq 0 ]; then
+            subscription-manager config --rhsm.manage_repos=1
+            rhsmcertd_restart_required=1
+        fi
+
+        # Restart rhsmcertd to propagate change in rhsm.conf
+        if [ $rhsmcertd_restart_required -eq 1 ]; then
             %systemd_postun_with_restart rhsmcertd.service
         fi
+
         # Script should clean up after itself
         rm -f /etc/rhsm/rhsm.conf.cloud_save
     fi
