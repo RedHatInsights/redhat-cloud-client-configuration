@@ -2,3 +2,5 @@ enable insights-register.path
 enable insights-unregister.path
 enable rhcd.path
 enable rhcd-stop.path
+enable insights-unregistered.path
+enable rhcd.service
