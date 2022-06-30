@@ -16,6 +16,7 @@ Source6: insights-unregistered.service.in
 Source7: rhcd.path.in
 Source8: rhcd-stop.path.in
 Source9: rhcd-stop.service.in
+Source10: 80-rhcd-register.preset
 %endif
 
 BuildArch:      noarch
@@ -69,17 +70,20 @@ install -m644 %{SOURCE4} -t %{buildroot}%{_presetdir}/
 install -D -m644 rhcd.path %{buildroot}%{_unitdir}/
 install -D -m644 rhcd-stop.path %{buildroot}%{_unitdir}/
 install -D -m644 rhcd-stop.service %{buildroot}%{_unitdir}/
+install -m644 %{SOURCE10} -t %{buildroot}%{_presetdir}/
 %endif
 
 %post
+# insights-client
 %systemd_post insights-register.path
 %systemd_post insights-unregister.path
 %systemd_post 80-insights-register.preset
 %systemd_post insights-unregistered.path
-
+#rhcd
 %if 0%{?rhel} >= 8
 %systemd_post rhcd.path
 %systemd_post rhcd-stop.path
+%systemd_post 80-rhcd-register.preset
 %endif
 
 # Make sure that rhsmcertd.service is enabled and running
