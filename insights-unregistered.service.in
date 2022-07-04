@@ -17,6 +17,6 @@ ConditionPathExists=@sysconfdir@/insights-client/.unregistered
 
 [Service]
 Type=simple
-ExecStart=systemctl unmask --now insights-register.path
-ExecStop=systemctl start insights-register.path
+ExecStart=/bin/systemctl unmask --now insights-register.path
+ExecStop=/bin/systemctl start insights-register.path
 Restart=no
