@@ -12,12 +12,10 @@ Source3: insights-unregister.service.in
 Source4: 80-insights-register.preset
 Source5: insights-unregistered.path.in
 Source6: insights-unregistered.service.in
-%if 0%{?rhel} >= 8
 Source7: rhcd.path.in
 Source8: rhcd-stop.path.in
 Source9: rhcd-stop.service.in
 Source10: 80-rhcd-register.preset
-%endif
 
 BuildArch:      noarch
 
