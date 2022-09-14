@@ -75,13 +75,11 @@ install -m644 %{SOURCE10} -t %{buildroot}%{_presetdir}/
 # insights-client
 %systemd_post insights-register.path
 %systemd_post insights-unregister.path
-%systemd_post 80-insights-register.preset
 %systemd_post insights-unregistered.path
 #rhcd
 %if 0%{?rhel} >= 8
 %systemd_post rhcd.path
 %systemd_post rhcd-stop.path
-%systemd_post 80-rhcd-register.preset
 %endif
 
 # Make sure that rhsmcertd.service is enabled and running
@@ -193,6 +191,9 @@ fi
 
 
 %changelog
+* Wed Sep 14 2022 Gael Chamoulaud <gchamoul@redhat.com> - 1-1
+- Remove preset files from %post directive
+
 * Tue May 31 2022 Link Dupont <link@redhat.com> - 1-1
 - fix up some spec file descriptions
 - add override to automatically activate rhcd
