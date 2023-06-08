@@ -12,7 +12,7 @@ Description=Check if manually Unregistered from Red Hat Insights Client Path Wat
 Documentation=man:insights-client(8)
 
 [Path]
-PathExists=@sysconfdir@/insights-client/.unregistered
+PathModified=@sysconfdir@/insights-client/.unregistered
 
 [Install]
 WantedBy=multi-user.target
