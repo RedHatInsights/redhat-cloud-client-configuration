@@ -1,5 +1,5 @@
 Name:           redhat-cloud-client-configuration
-Version:        1
+Version:        1.0
 Release:        1%{?dist}
 Summary:        Red Hat cloud client configuration
 License:        GPLv2+
@@ -191,6 +191,9 @@ fi
 
 
 %changelog
+* Thu Nov 30 2023 Alba Hita Catala <ahitacat@redhat.com> 1.0-1
+- new package built with tito
+
 * Wed Sep 14 2022 Gael Chamoulaud <gchamoul@redhat.com> - 1-1
 - Remove preset files from %post directive
 
