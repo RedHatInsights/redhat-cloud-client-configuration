@@ -16,6 +16,7 @@ Source7: rhcd.path.in
 Source8: rhcd-stop.path.in
 Source9: rhcd-stop.service.in
 Source10: 80-rhcd-register.preset
+Source11: insights-register-cgroupv1.service.in
 
 BuildArch:      noarch
 
@@ -38,7 +39,11 @@ Configure client autoregistration for cloud environments
 %build
 # insights-client
 sed -e 's|@sysconfdir@|%{_sysconfdir}|g' %{SOURCE0} > insights-register.path
+%if 0%{?rhel} < 8
+sed -e 's|@bindir@|%{_bindir}|g' %{SOURCE11} > insights-register.service
+%else
 sed -e 's|@bindir@|%{_bindir}|g' %{SOURCE1} > insights-register.service
+%endif
 sed -e 's|@sysconfdir@|%{_sysconfdir}|g' %{SOURCE2} > insights-unregister.path
 sed -e 's|@sysconfdir@|%{_sysconfdir}|g' -e 's|@bindir@|%{_bindir}|g' %{SOURCE3} > insights-unregister.service
 sed -e 's|@sysconfdir@|%{_sysconfdir}|g' %{SOURCE5} > insights-unregistered.path
