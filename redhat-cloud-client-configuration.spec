@@ -5,7 +5,11 @@ Summary:        Red Hat cloud client configuration
 License:        GPLv2+
 URL:            https://github.com/RedHatInsights/redhat-cloud-client-configuration
 
-Source0: insights-register.path.in
+# Sources can be obtained by
+# git clone https://github.com/rpm-software-management/tito
+# cd tito
+# tito build --tgz
+Source0: %{name}-%{version}.tar.gz
 Source1: insights-register.service.in
 Source2: insights-unregister.path.in
 Source3: insights-unregister.service.in
@@ -17,6 +21,7 @@ Source8: rhcd-stop.path.in
 Source9: rhcd-stop.service.in
 Source10: 80-rhcd-register.preset
 Source11: insights-register-cgroupv1.service.in
+Source12: insights-register.path.in
 
 BuildArch:      noarch
 
@@ -38,7 +43,7 @@ Configure client autoregistration for cloud environments
 
 %build
 # insights-client
-sed -e 's|@sysconfdir@|%{_sysconfdir}|g' %{SOURCE0} > insights-register.path
+sed -e 's|@sysconfdir@|%{_sysconfdir}|g' %{SOURCE12} > insights-register.path
 %if 0%{?rhel} < 8
 sed -e 's|@bindir@|%{_bindir}|g' %{SOURCE11} > insights-register.service
 %else
