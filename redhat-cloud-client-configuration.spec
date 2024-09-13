@@ -32,10 +32,28 @@ Requires:      subscription-manager
 Requires:      rhc
 %endif
 
+Conflicts: %{name}-cdn
+
 BuildRequires: systemd
 
 %description
 Configure client autoregistration for cloud environments
+
+
+%package cdn
+Summary: Red Hat cloud client configuration - CDN
+
+Requires:      insights-client
+Requires:      subscription-manager
+%if 0%{?rhel} >= 8 || 0%{?fedora}
+Requires:      rhc
+%endif
+Conflicts: %{name}
+
+%description cdn
+Configure client autoregistration for cloud environments, connecting directly
+to Red Hat's CDN.
+
 
 %prep
 # we have no source
@@ -197,6 +215,139 @@ fi
 
 
 %files
+%{_presetdir}/80-insights-register.preset
+%if 0%{?rhel} >= 8 || 0%{?fedora}
+%{_presetdir}/80-rhcd-register.preset
+%endif
+%{_unitdir}/insights-register.path
+%{_unitdir}/insights-register.service
+%{_unitdir}/insights-unregister.path
+%{_unitdir}/insights-unregister.service
+%{_unitdir}/insights-unregistered.path
+%{_unitdir}/insights-unregistered.service
+%if 0%{?rhel} >= 8 || 0%{?fedora}
+%{_unitdir}/rhcd-stop.path
+%{_unitdir}/rhcd-stop.service
+%{_unitdir}/rhcd.path
+%endif
+
+
+%post cdn
+# insights-client
+%systemd_post insights-register.path
+%systemd_post insights-unregister.path
+%systemd_post insights-unregistered.path
+# rhcd
+%if 0%{?rhel} >= 8 || 0%{?fedora}
+%systemd_post rhcd.path
+%systemd_post rhcd-stop.path
+%endif
+
+# Make sure that rhsmcertd.service is enabled and running
+%systemd_post rhsmcertd.service
+# Run following block only during installation (not during update)
+if [ $1 -eq 1 ]; then
+    # Try to get current value of auto-registration in rhsm.conf
+    subscription-manager config --list | grep -q '^[ \t]*auto_registration[ \t]*=[ \t]*1'
+    if [ $? -eq 0 ]; then
+        auto_reg_enabled=1
+    else
+        auto_reg_enabled=0
+    fi
+
+    # Try to get current value of manage_repos
+    subscription-manager config --list | grep -q '^[ \t]*manage_repos[ \t]*=[ \t]*0'
+    if [ $? -eq 0 ]; then
+        manage_repos_enabled=0
+    else
+        manage_repos_enabled=1
+    fi
+
+    # When we are going to change any configuration value, then save original rhsm.conf
+    if [ $auto_reg_enabled -eq 0 -o $manage_repos_enabled -eq 1 ]; then
+        echo -e "#\n# Automatic backup of rhsm.conf created by %{name}-cdn installation script\n#\n" \
+            > /etc/rhsm/rhsm.conf.cloud_save
+        cat /etc/rhsm/rhsm.conf >> /etc/rhsm/rhsm.conf.cloud_save
+    fi
+
+    # Enable auto-registration in rhsm.conf
+    if [ $auto_reg_enabled -eq 0 ]; then
+        subscription-manager config --rhsmcertd.auto_registration=1
+    fi
+
+    # Disable management of redhat.repo on systems running in
+    # public cloud, because content is provided by RHUI
+    if [ $manage_repos_enabled -eq 1 ]; then
+        subscription-manager config --rhsm.manage_repos=0
+    fi
+
+    # Restart rhsmcertd to reload configuration file, when it is necessary
+    if [ $auto_reg_enabled -eq 0 -o $manage_repos_enabled -eq 1 ]; then
+        /bin/systemctl restart rhsmcertd.service
+    fi
+fi
+
+%preun cdn
+if [ $1 -eq 0 ]; then
+    # Packager removal, unmask register if exists
+    /bin/systemctl unmask --now insights-register.path > /dev/null 2>&1 || :
+%if 0%{?rhel} >= 8 || 0%{?fedora}
+    /bin/systemctl unmask --now rhcd.path > /dev/null 2>&1 || :
+%endif
+fi
+%systemd_preun insights-register.path
+%systemd_preun insights-unregister.path
+%systemd_preun insights-unregistered.path
+
+%if 0%{?rhel} >= 8 || 0%{?fedora}
+%systemd_preun rhcd.path
+%systemd_preun rhcd-stop.path
+%endif
+
+%postun cdn
+%systemd_postun insights-register.path
+%systemd_postun insights-unregister.path
+%systemd_postun insights-unregistered.path
+
+%if 0%{?rhel} >= 8 || 0%{?fedora}
+%systemd_postun rhcd.path
+%systemd_postun rhcd-stop.path
+%endif
+
+
+# Run following block only during removal (not during update)
+if [ $1 -eq 0 ]; then
+    if [ -f /etc/rhsm/rhsm.conf.cloud_save ]; then
+        rhsmcertd_restart_required=0
+
+        # When auto-registration was originally disabled and we had
+        # to enable it during installation of this RPM, then disable it
+        # again during removal of RPM package to restore original state.
+        grep -q '^[ \t]*auto_registration[ \t]*=[ \t]*0' /etc/rhsm/rhsm.conf.cloud_save
+        if [ $? -eq 0 ]; then
+            subscription-manager config --rhsmcertd.auto_registration=0
+            rhsmcertd_restart_required=1
+        fi
+
+        # When managing was originally enabled, then enable it again
+        grep -q '^[ \t]*manage_repos[ \t]*=[ \t]*1' /etc/rhsm/rhsm.conf.cloud_save
+        if [ $? -eq 0 ]; then
+            subscription-manager config --rhsm.manage_repos=1
+            rhsmcertd_restart_required=1
+        fi
+
+        # Restart rhsmcertd to propagate change in rhsm.conf
+        if [ $rhsmcertd_restart_required -eq 1 ]; then
+            %systemd_postun_with_restart rhsmcertd.service
+        fi
+
+        # Script should clean up after itself
+        rm -f /etc/rhsm/rhsm.conf.cloud_save
+    fi
+fi
+
+
+%files cdn
 %{_presetdir}/80-insights-register.preset
 %if 0%{?rhel} >= 8 || 0%{?fedora}
 %{_presetdir}/80-rhcd-register.preset
