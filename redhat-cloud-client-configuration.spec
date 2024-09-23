@@ -197,8 +197,21 @@ fi
 
 
 %files
-%{_unitdir}/*
-%{_presetdir}/*
+%{_presetdir}/80-insights-register.preset
+%if 0%{?rhel} >= 8 || 0%{?fedora}
+%{_presetdir}/80-rhcd-register.preset
+%endif
+%{_unitdir}/insights-register.path
+%{_unitdir}/insights-register.service
+%{_unitdir}/insights-unregister.path
+%{_unitdir}/insights-unregister.service
+%{_unitdir}/insights-unregistered.path
+%{_unitdir}/insights-unregistered.service
+%if 0%{?rhel} >= 8 || 0%{?fedora}
+%{_unitdir}/rhcd-stop.path
+%{_unitdir}/rhcd-stop.service
+%{_unitdir}/rhcd.path
+%endif
 
 
 %changelog
