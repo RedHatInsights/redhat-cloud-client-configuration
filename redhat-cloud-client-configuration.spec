@@ -28,7 +28,7 @@ BuildArch:      noarch
 Requires:      insights-client
 Requires:      subscription-manager
 
-%if 0%{?rhel} >= 8
+%if 0%{?rhel} >= 8 || 0%{?fedora}
 Requires:      rhc
 %endif
 
@@ -44,7 +44,7 @@ Configure client autoregistration for cloud environments
 %build
 # insights-client
 sed -e 's|@sysconfdir@|%{_sysconfdir}|g' %{SOURCE12} > insights-register.path
-%if 0%{?rhel} >= 8
+%if 0%{?rhel} >= 8 || 0%{?fedora}
 sed -e 's|@bindir@|%{_bindir}|g' %{SOURCE1} > insights-register.service
 %else
 sed -e 's|@bindir@|%{_bindir}|g' %{SOURCE11} > insights-register.service
@@ -54,7 +54,7 @@ sed -e 's|@sysconfdir@|%{_sysconfdir}|g' -e 's|@bindir@|%{_bindir}|g' %{SOURCE3}
 sed -e 's|@sysconfdir@|%{_sysconfdir}|g' %{SOURCE5} > insights-unregistered.path
 sed -e 's|@sysconfdir@|%{_sysconfdir}|g' %{SOURCE6} > insights-unregistered.service
 
-%if 0%{?rhel} >= 8
+%if 0%{?rhel} >= 8 || 0%{?fedora}
 # rhcd
 sed -e 's|@sysconfdir@|%{_sysconfdir}|g' %{SOURCE7} > rhcd.path
 sed -e 's|@sysconfdir@|%{_sysconfdir}|g' %{SOURCE8} > rhcd-stop.path
@@ -73,7 +73,7 @@ install -m644 insights-unregistered.service %{buildroot}%{_unitdir}/
 install -d %{buildroot}%{_presetdir}
 install -m644 %{SOURCE4} -t %{buildroot}%{_presetdir}/
 
-%if 0%{?rhel} >= 8
+%if 0%{?rhel} >= 8 || 0%{?fedora}
 # rhcd
 install -D -m644 rhcd.path %{buildroot}%{_unitdir}/
 install -D -m644 rhcd-stop.path %{buildroot}%{_unitdir}/
@@ -87,7 +87,7 @@ install -m644 %{SOURCE10} -t %{buildroot}%{_presetdir}/
 %systemd_post insights-unregister.path
 %systemd_post insights-unregistered.path
 #rhcd
-%if 0%{?rhel} >= 8
+%if 0%{?rhel} >= 8 || 0%{?fedora}
 %systemd_post rhcd.path
 %systemd_post rhcd-stop.path
 %endif
@@ -140,7 +140,7 @@ fi
 if [ $1 -eq 0 ]; then
     # Packager removal, unmask register if exists
     /bin/systemctl unmask --now insights-register.path > /dev/null 2>&1 || :
-%if 0%{?rhel} >= 8
+%if 0%{?rhel} >= 8 || 0%{?fedora}
     /bin/systemctl unmask --now rhcd.path > /dev/null 2>&1 || :
 %endif
 fi
@@ -148,7 +148,7 @@ fi
 %systemd_preun insights-unregister.path
 %systemd_preun insights-unregistered.path
 
-%if 0%{?rhel} >= 8
+%if 0%{?rhel} >= 8 || 0%{?fedora}
 %systemd_preun rhcd.path
 %systemd_preun rhcd-stop.path
 %endif
@@ -158,7 +158,7 @@ fi
 %systemd_postun insights-unregister.path
 %systemd_postun insights-unregistered.path
 
-%if 0%{?rhel} >= 8
+%if 0%{?rhel} >= 8 || 0%{?fedora}
 %systemd_postun rhcd.path
 %systemd_postun rhcd-stop.path
 %endif
