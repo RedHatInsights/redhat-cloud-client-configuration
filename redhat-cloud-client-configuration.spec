@@ -164,6 +164,7 @@ fi
 %endif
 
 
+# Run following block only during removal (not during update)
 if [ $1 -eq 0 ]; then
     if [ -f /etc/rhsm/rhsm.conf.cloud_save ]; then
         rhsmcertd_restart_required=0
