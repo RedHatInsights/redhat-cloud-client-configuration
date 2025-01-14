@@ -86,7 +86,7 @@ install -m644 %{SOURCE10} -t %{buildroot}%{_presetdir}/
 %systemd_post insights-register.path
 %systemd_post insights-unregister.path
 %systemd_post insights-unregistered.path
-#rhcd
+# rhcd
 %if 0%{?rhel} >= 8 || 0%{?fedora}
 %systemd_post rhcd.path
 %systemd_post rhcd-stop.path
