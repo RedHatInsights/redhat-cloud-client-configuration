@@ -1,0 +1,14 @@
+[Unit]
+Description=Run disable-rhui-repos on first boot
+ConditionPathExists=/etc/rhccc-firstboot-run
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/rm /etc/rhccc-firstboot-run
+ExecStart=-/usr/bin/touch /var/lib/rhui/disable-rhui
+ExecStart=@libexecdir@/rhccc-disable-rhui-repos.py /etc/yum.repos.d/
+
+[Install]
+WantedBy=multi-user.target
