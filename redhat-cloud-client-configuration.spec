@@ -26,6 +26,8 @@ Source13: rhccc-disable-rhui-repos.py
 Source14: rhccc-disable-rhui-repos.service.in
 Source15: 80-rhccc-disable-rhui-repos.preset
 
+Source100: LICENSE
+
 BuildArch:      noarch
 
 Requires:      insights-client
