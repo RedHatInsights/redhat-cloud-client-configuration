@@ -263,6 +263,8 @@ fi
 touch /var/lib/rhui/disable-rhui || :
 # Run following block only during installation (not during update)
 if [ $1 -eq 1 ]; then
+    rhsmcertd_restart_required=0
+    
     # Try to get current value of auto-registration in rhsm.conf
     subscription-manager config --list | grep -q '^[ \t]*auto_registration[ \t]*=[ \t]*1'
     if [ $? -eq 0 ]; then
@@ -271,8 +273,16 @@ if [ $1 -eq 1 ]; then
         auto_reg_enabled=0
     fi
 
+    # Try to get current value of manage_repos
+    subscription-manager config --list | grep -q '^[ \t]*manage_repos[ \t]*=[ \t]*0'
+    if [ $? -eq 0 ]; then
+        manage_repos_enabled=0
+    else
+        manage_repos_enabled=1
+    fi
+
     # When we are going to change any configuration value, then save original rhsm.conf
-    if [ $auto_reg_enabled -eq 0 ]; then
+    if [ $auto_reg_enabled -eq 0 -o $manage_repos_enabled -eq 0 ]; then
         echo -e "#\n# Automatic backup of rhsm.conf created by %{name}-cdn installation script\n#\n" \
             > /etc/rhsm/rhsm.conf.cloud_save
         cat /etc/rhsm/rhsm.conf >> /etc/rhsm/rhsm.conf.cloud_save
@@ -281,10 +291,18 @@ if [ $1 -eq 1 ]; then
     # Enable auto-registration in rhsm.conf
     if [ $auto_reg_enabled -eq 0 ]; then
         subscription-manager config --rhsmcertd.auto_registration=1
+        rhsmcertd_restart_required=1
+    fi
+
+    # Enable management of redhat.repo on systems running on
+    # public cloud and getting content from CDN
+    if [ $manage_repos_enabled -eq 0 ]; then
+        subscription-manager config --rhsm.manage_repos=1
+        rhsmcertd_restart_required=1
     fi
 
     # Restart rhsmcertd to reload configuration file, when it is necessary
-    if [ $auto_reg_enabled -eq 0 ]; then
+    if [ $rhsmcertd_restart_required -eq 1 ]; then
         /bin/systemctl restart rhsmcertd.service
     fi
 fi
@@ -331,6 +349,13 @@ if [ $1 -eq 0 ]; then
         grep -q '^[ \t]*auto_registration[ \t]*=[ \t]*0' /etc/rhsm/rhsm.conf.cloud_save
         if [ $? -eq 0 ]; then
             subscription-manager config --rhsmcertd.auto_registration=0
+            rhsmcertd_restart_required=1
+        fi
+
+        # When managing was originally disabled, then disable it again
+        grep -q '^[ \t]*manage_repos[ \t]*=[ \t]*0' /etc/rhsm/rhsm.conf.cloud_save
+        if [ $? -eq 0 ]; then
+            subscription-manager config --rhsm.manage_repos=0
             rhsmcertd_restart_required=1
         fi
 
