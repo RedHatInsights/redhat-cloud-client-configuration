@@ -291,7 +291,7 @@ if [ $1 -eq 1 ]; then
     rhsmcertd_restart_required=0
     
     # Try to get current value of auto-registration in rhsm.conf
-    subscription-manager config --list | grep -q '^[ \t]*auto_registration[ \t]*=[ \t]*1'
+    subscription-manager config --list | grep -q '^[ \t]*auto_registration[ \t]*=[ \t]*1[ \t]*$'
     if [ $? -eq 0 ]; then
         auto_reg_enabled=1
     else
@@ -300,7 +300,7 @@ if [ $1 -eq 1 ]; then
 
     # Try to get information if current value of auto_registration_interval in rhsm.conf
     # has value 1 minute
-    subscription-manager config --list | grep -q '^[ \t]*auto_registration_interval[ \t]*=[ \t]*1'
+    subscription-manager config --list | grep -q '^[ \t]*auto_registration_interval[ \t]*=[ \t]*1[ \t]*$'
     if [ $? -eq 0 ]; then
         auto_reg_interval_one_min=1
     else
@@ -317,7 +317,7 @@ if [ $1 -eq 1 ]; then
     fi
 
     # Try to get current value of manage_repos
-    subscription-manager config --list | grep -q '^[ \t]*manage_repos[ \t]*=[ \t]*0'
+    subscription-manager config --list | grep -q '^[ \t]*manage_repos[ \t]*=[ \t]*0[ \t]*$'
     if [ $? -eq 0 ]; then
         manage_repos_enabled=0
     else
@@ -403,14 +403,14 @@ if [ $1 -eq 0 ]; then
         # When auto-registration was originally disabled and we had
         # to enable it during installation of this RPM, then disable it
         # again during removal of RPM package to restore original state.
-        grep -q '^[ \t]*auto_registration[ \t]*=[ \t]*0' /etc/rhsm/rhsm.conf.cloud_save
+        grep -q '^[ \t]*auto_registration[ \t]*=[ \t]*0[ \t]*$' /etc/rhsm/rhsm.conf.cloud_save
         if [ $? -eq 0 ]; then
             subscription-manager config --rhsmcertd.auto_registration=0
             rhsmcertd_restart_required=1
         fi
 
         # Was original interval one minute? If not, then restore original value.
-        grep -q '^[ \t]*auto_registration_interval[ \t]*=[ \t]*1' /etc/rhsm/rhsm.conf.cloud_save
+        grep -q '^[ \t]*auto_registration_interval[ \t]*=[ \t]*1[ \t]*$' /etc/rhsm/rhsm.conf.cloud_save
         if [ $? -ne 0 ]; then
             original_interval=`sed -n 's/^[ \t]*auto_registration_interval[ \t]*=[ \t]*\(.*\)/\1/p' < /etc/rhsm/rhsm.conf.cloud_save`
             subscription-manager config --rhsmcertd.auto_registration_interval=${original_interval}
@@ -426,7 +426,7 @@ if [ $1 -eq 0 ]; then
         fi
 
         # When managing was originally disabled, then disable it again
-        grep -q '^[ \t]*manage_repos[ \t]*=[ \t]*0' /etc/rhsm/rhsm.conf.cloud_save
+        grep -q '^[ \t]*manage_repos[ \t]*=[ \t]*0[ \t]*$' /etc/rhsm/rhsm.conf.cloud_save
         if [ $? -eq 0 ]; then
             subscription-manager config --rhsm.manage_repos=0
             rhsmcertd_restart_required=1
