@@ -307,6 +307,15 @@ if [ $1 -eq 1 ]; then
         auto_reg_interval_one_min=0
     fi
 
+    # Try to get information if current value of auto_registration_identity_interval in rhsm.conf
+    # has value 10 minutes
+    subscription-manager config --list | grep -q '^[ \t]*auto_registration_identity_interval[ \t]*=[ \t]*10[ \t]*$'
+    if [ $? -eq 0 ]; then
+        auto_reg_interval_identity_ten_mins=1
+    else
+        auto_reg_interval_identity_ten_mins=0
+    fi
+
     # Try to get current value of manage_repos
     subscription-manager config --list | grep -q '^[ \t]*manage_repos[ \t]*=[ \t]*0'
     if [ $? -eq 0 ]; then
@@ -316,7 +325,7 @@ if [ $1 -eq 1 ]; then
     fi
 
     # When we are going to change any configuration value, then save original rhsm.conf
-    if [ $auto_reg_enabled -eq 0 -o $manage_repos_enabled -eq 0 -o $auto_reg_interval_one_min -eq 0 ]; then
+    if [ $auto_reg_enabled -eq 0 -o $manage_repos_enabled -eq 0 -o $auto_reg_interval_one_min -eq 0 -o $auto_reg_interval_identity_ten_mins -eq 0 ]; then
         echo -e "#\n# Automatic backup of rhsm.conf created by %{name}-cdn installation script\n#\n" \
             > /etc/rhsm/rhsm.conf.cloud_save
         cat /etc/rhsm/rhsm.conf >> /etc/rhsm/rhsm.conf.cloud_save
@@ -332,6 +341,13 @@ if [ $1 -eq 1 ]; then
     # (set auto_registration_interval to 1 in rhsm.conf)
     if [ $auto_reg_interval_one_min -eq 0 ]; then
         subscription-manager config --rhsmcertd.auto_registration_interval=1
+        rhsmcertd_restart_required=1
+    fi
+
+    # Set splay of auto-registration identity interval to ten minutes
+    # (set auto_registration_identity_interval to 10 in rhsm.conf)
+    if [ $auto_reg_interval_identity_ten_mins -eq 0 ]; then
+        subscription-manager config --rhsmcertd.auto_registration_identity_interval=10
         rhsmcertd_restart_required=1
     fi
 
@@ -398,6 +414,14 @@ if [ $1 -eq 0 ]; then
         if [ $? -ne 0 ]; then
             original_interval=`sed -n 's/^[ \t]*auto_registration_interval[ \t]*=[ \t]*\(.*\)/\1/p' < /etc/rhsm/rhsm.conf.cloud_save`
             subscription-manager config --rhsmcertd.auto_registration_interval=${original_interval}
+            rhsmcertd_restart_required=1
+        fi
+
+        # Was original identity interval ten minutes? If not, then restore original value.
+        grep -q '^[ \t]*auto_registration_identity_interval[ \t]*=[ \t]*10[ \t]*$' /etc/rhsm/rhsm.conf.cloud_save
+        if [ $? -ne 0 ]; then
+            original_interval=`sed -n 's/^[ \t]*auto_registration_identity_interval[ \t]*=[ \t]*\(.*\)/\1/p' < /etc/rhsm/rhsm.conf.cloud_save`
+            subscription-manager config --rhsmcertd.auto_registration_identity_interval=${original_interval}
             rhsmcertd_restart_required=1
         fi
 
