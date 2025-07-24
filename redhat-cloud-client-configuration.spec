@@ -1,6 +1,6 @@
 Name:           redhat-cloud-client-configuration
 Version:        1
-Release:        1%{?dist}
+Release:        14%{?dist}
 Summary:        Red Hat cloud client configuration
 License:        GPL-2.0-or-later
 URL:            https://github.com/RedHatInsights/redhat-cloud-client-configuration
