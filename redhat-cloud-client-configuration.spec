@@ -96,13 +96,15 @@ sed -e 's|@libexecdir@|%{_libexecdir}|g' %{SOURCE14} > rhccc-disable-rhui-repos.
 %if 0%{?rhel} >= 8 || 0%{?fedora}
 # rhcd or yggdrasil
 %if 0%{?rhel} >= 10 || 0%{?fedora}
-sed -e 's|@sysconfdir@|%{_sysconfdir}|g' %{SOURCE7} > %{service_name}.path
-sed -e 's|@sysconfdir@|%{_sysconfdir}|g' %{SOURCE8} > %{service_name}-stop.path
-sed -e 's|@sysconfdir@|%{_sysconfdir}|g' %{SOURCE9} > %{service_name}-stop.service
-%else
+# yggdrasil
 sed -e 's|@sysconfdir@|%{_sysconfdir}|g' %{SOURCE17} > %{service_name}.path
 sed -e 's|@sysconfdir@|%{_sysconfdir}|g' %{SOURCE18} > %{service_name}-stop.path
 sed -e 's|@sysconfdir@|%{_sysconfdir}|g' %{SOURCE19} > %{service_name}-stop.service
+%else
+# rhcd
+sed -e 's|@sysconfdir@|%{_sysconfdir}|g' %{SOURCE7} > %{service_name}.path
+sed -e 's|@sysconfdir@|%{_sysconfdir}|g' %{SOURCE8} > %{service_name}-stop.path
+sed -e 's|@sysconfdir@|%{_sysconfdir}|g' %{SOURCE9} > %{service_name}-stop.service
 %endif
 %endif
 
