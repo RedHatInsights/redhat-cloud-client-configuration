@@ -16,5 +16,5 @@ ConditionPathExists=!@sysconfdir@/pki/consumer/cert.pem
 [Service]
 Type=simple
 ExecStart=/bin/systemctl stop yggdrasil.service
-ExecStopPost=/bin/systemctl unmask --now yggdrasil.path
+ExecStopPost=/bin/systemctl unmask yggdrasil.path
 ExecStopPost=/bin/systemctl start yggdrasil.path
