@@ -195,9 +195,9 @@ fi
 %preun
 if [ $1 -eq 0 ]; then
     # Packager removal, unmask register if exists
-    /bin/systemctl unmask --now insights-register.path > /dev/null 2>&1 || :
+    /bin/systemctl unmask insights-register.path > /dev/null 2>&1 || :
 %if 0%{?rhel} >= 8 || 0%{?fedora}
-    /bin/systemctl unmask --now %{service_name}.path > /dev/null 2>&1 || :
+    /bin/systemctl unmask %{service_name}.path > /dev/null 2>&1 || :
 %endif
 fi
 %systemd_preun insights-register.path
@@ -369,9 +369,9 @@ fi
 %preun cdn
 if [ $1 -eq 0 ]; then
     # Packager removal, unmask register if exists
-    /bin/systemctl unmask --now insights-register.path > /dev/null 2>&1 || :
+    /bin/systemctl unmask insights-register.path > /dev/null 2>&1 || :
 %if 0%{?rhel} >= 8 || 0%{?fedora}
-    /bin/systemctl unmask --now %{service_name}.path > /dev/null 2>&1 || :
+    /bin/systemctl unmask %{service_name}.path > /dev/null 2>&1 || :
 %endif
 fi
 %systemd_preun insights-register.path
