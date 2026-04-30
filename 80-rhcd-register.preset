@@ -1,2 +1,3 @@
 enable rhcd.path
+enable rhcd-pathexists.path
 enable rhcd-stop.path

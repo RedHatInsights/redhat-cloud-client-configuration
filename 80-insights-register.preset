@@ -1,3 +1,4 @@
 enable insights-register.path
+enable insights-register-pathexists.path
 enable insights-unregister.path
 enable insights-unregistered.path

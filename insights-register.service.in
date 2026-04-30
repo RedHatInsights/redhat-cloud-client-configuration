@@ -16,6 +16,7 @@ After=network-online.target
 
 [Service]
 Type=simple
+ExecCondition=@libexecdir@/rhccc-owner-allows-mtls-consumer.py
 ExecStart=@bindir@/insights-client --register
 Restart=no
 WatchdogSec=900
@@ -26,4 +27,5 @@ TasksMax=300
 BlockIOWeight=100
 ExecStartPost=-/bin/bash -c "echo 2G >/dev/null 2>&1 > /sys/fs/cgroup/memory/system.slice/insights-register.service/memory.memsw.limit_in_bytes"
 ExecStartPost=-/bin/bash -c "echo 1G >/dev/null 2>&1 > /sys/fs/cgroup/memory/system.slice/insights-register.service/memory.soft_limit_in_bytes"
-ExecStopPost=/bin/systemctl mask --now insights-register.path
+ExecStop=/bin/systemctl mask --now insights-register.path
+ExecStopPost=/bin/systemctl mask --now insights-register-pathexists.path
