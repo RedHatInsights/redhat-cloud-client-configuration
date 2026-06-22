@@ -13,6 +13,7 @@ jobs:
       - rhel-7
       - rhel-8
       - rhel-9
+      - rhel-10
 
   - job: copr_build
     trigger: commit
@@ -26,3 +27,4 @@ jobs:
       - fedora-all
       - rhel-8
       - rhel-9
+      - rhel-10
