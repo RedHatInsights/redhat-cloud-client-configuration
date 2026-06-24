@@ -6,18 +6,25 @@ this repository.
 ## What is included in this repository
 
 This repository builds the **`redhat-cloud-client-configuration`** RPM (often
-abbreviated **RHCCC**). The package wires cloud VM images for automatic
-registration with Red Hat services when an RHSM consumer certificate appears at
-`/etc/pki/consumer/cert.pem`.
+abbreviated **RHCCC**). The package does two things on cloud-oriented systems:
 
-On first boot (or when the cert is created), path units trigger:
+1. **Configures automatic registration** — `%post` scriptlets adjust
+   `rhsm.conf` (e.g. `auto_registration`, `manage_repos`) so `rhsmcertd` can
+   register the host when cloud metadata is available.
+2. **Installs systemd path units and services** that, once auto-registration
+   has produced a consumer certificate, run `insights-client --register` and
+   start the cloud connectivity daemon (`rhcd` on RHEL 8–9, `yggdrasil` on
+   RHEL 10+).
 
-- **Insights** registration (`insights-client --register`)
-- **RHC / remote host connectivity** — `rhcd` on RHEL 8–9, `yggdrasil` on
-  RHEL 10+ (see [rhc](https://github.com/RedHatInsights/rhc) and
-  [yggdrasil](https://github.com/redhatinsights/yggdrasil); those daemons ship
-  in separate RPMs)
-- **Unregister / cleanup** paths when the consumer cert is removed
+Path units react when `/etc/pki/consumer/cert.pem` appears or is removed.
+Unregister paths run `insights-client --unregister` and stop `rhcd`/`yggdrasil`
+when the cert goes away.
+
+The cloud connectivity daemon ships in separate RPMs — see
+[yggdrasil](https://github.com/redhatinsights/yggdrasil) (`yggdrasil` on
+RHEL 10+; the RHEL 8–9 unit files target the `rhcd` service name). This
+repository does not implement auto-registration itself; it wires systemd units
+around `rhsmcertd` and subscription-manager behavior.
 
 The RPM ships two **mutually exclusive** subpackages (see the spec file):
 
@@ -26,15 +33,17 @@ The RPM ships two **mutually exclusive** subpackages (see the spec file):
 | `redhat-cloud-client-configuration` (base) | RHUI images — disables `manage_repos`, content from RHUI |
 | `redhat-cloud-client-configuration-cdn` | CDN images — enables `manage_repos`, tighter auto-reg intervals, disables RHUI `.repo` files via `rhccc-disable-rhui-repos.py` |
 
-There is no application runtime in this repo — only systemd unit templates,
-presets, one Python helper script, and RPM packaging logic.
+There is no long-running service developed in this repository — only RPM
+packaging, systemd unit templates, presets, `%post`/`%preun` scriptlets, and
+one install-time helper script for the CDN subpackage
+(`rhccc-disable-rhui-repos.py`).
 
 | Path | Purpose |
 |------|---------|
 | `*.in` | systemd unit/path templates; `@bindir@`, `@sysconfdir@`, `@libexecdir@` are substituted in `%build` |
 | `80-*.preset` | systemd presets that enable the path units |
 | `insights-register*.in`, `insights-unregister*.in`, `insights-unregistered*.in` | Insights auto-register / unregister path units and services |
-| `rhcd*.in` | RHC daemon (`rhcd`) path units for RHEL 8–9 |
+| `rhcd*.in` | `rhcd` service path units for RHEL 8–9 |
 | `yggdrasil*.in` | Yggdrasil daemon path units for RHEL 10+ |
 | `rhccc-disable-rhui-repos.py` | CDN helper — disables RHUI mirrorlist/baseurl repos under `/etc/yum.repos.d/` |
 | `rhccc-disable-rhui-repos.service.in` | oneshot service run on first boot (CDN subpackage) |
@@ -92,12 +101,11 @@ flows.
 
 ### End-to-end (cloud auto-registration)
 
-Full auto-registration behavior is validated on cloud VM images (AWS, Azure,
-GCP) after RPM install and reboot: `rhsmcertd` auto-registration,
-`insights-client` registration, and `rhcd` or `yggdrasil` startup when the
-consumer cert appears. Exercise this manually on a test instance or through your
-team's cloud test infrastructure when changing units, scriptlets, or the Python
-helper.
+Full behavior is validated on cloud VM images (AWS, Azure, GCP) after RPM
+install and reboot: `rhsmcertd` auto-registration, `insights-client`
+registration, and `rhcd` or `yggdrasil` startup when the consumer cert
+appears. Exercise this on a test instance when changing units, scriptlets, or
+the Python helper.
 
 There are no GitHub Actions workflows in this repository — CI is Packit COPR
 builds (see [`.packit.yaml`](.packit.yaml)).
@@ -105,21 +113,24 @@ builds (see [`.packit.yaml`](.packit.yaml)).
 ## Security
 
 RHCCC installs **system-wide systemd units** and runs **root-owned `%post`
-scriptlets** that modify `/etc/rhsm/rhsm.conf`, restart `rhsmcertd`, and (CDN
-subpackage) rewrite files under `/etc/yum.repos.d/`. When modifying or
-generating code:
+scriptlets** that modify `/etc/rhsm/rhsm.conf`, enable units via `%systemd_post`
+macros, and (on fresh install when `rhsm.conf` changes) conditionally restart
+`rhsmcertd` so it picks up new settings; the CDN subpackage also rewrites files
+under `/etc/yum.repos.d/`. When modifying or generating code:
 
 - Do not log or commit RHSM consumer certificates, keys, or registration tokens.
 - `%post` scriptlets must only change `rhsm.conf` keys documented in the spec
   and must preserve/restore state via `/etc/rhsm/rhsm.conf.cloud_save` on
   package removal.
+- Avoid adding new `systemctl restart` calls in scriptlets without maintainer
+  review — packages may be installed into chroot or image build roots.
 - `rhccc-disable-rhui-repos.py` must only disable repos whose mirrorlist/baseurl
   contains `/rhui/`; avoid broad file writes or path traversal — operate only on
   explicit `.repo` paths passed as arguments.
 - systemd units should keep minimal privileges; do not broaden `ExecStart`
   commands or drop-in recommendations without review.
-- Path units watch `/etc/pki/consumer/cert.pem` — treat cert presence as the
-  registration gate, not a trigger for arbitrary commands.
+- Path units watch `/etc/pki/consumer/cert.pem` as the primary registration
+  trigger; update this document when unit gating logic changes in the spec.
 
 ## Code style and architecture
 
