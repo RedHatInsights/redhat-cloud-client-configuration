@@ -1,6 +1,6 @@
 Name:           redhat-cloud-client-configuration
 Version:        1
-Release:        15%{?dist}
+Release:        17%{?dist}
 Summary:        Red Hat cloud client configuration
 License:        GPL-2.0-or-later
 URL:            https://github.com/RedHatInsights/redhat-cloud-client-configuration
@@ -40,6 +40,8 @@ Source17: yggdrasil.path.in
 Source18: yggdrasil-stop.path.in
 Source19: yggdrasil-stop.service.in
 Source20: 80-yggdrasil-register.preset
+Source21: rhccc-owner-allows-mtls-consumer.py
+Source23: rhccc-mtls-consumer.service.conf.in
 
 Source100: LICENSE
 
@@ -83,9 +85,12 @@ to Red Hat's CDN.
 # insights-client
 sed -e 's|@sysconfdir@|%{_sysconfdir}|g' %{SOURCE12} > insights-register.path
 %if 0%{?rhel} >= 8 || 0%{?fedora}
-sed -e 's|@bindir@|%{_bindir}|g' %{SOURCE1} > insights-register.service
+sed -e 's|@bindir@|%{_bindir}|g' -e 's|@libexecdir@|%{_libexecdir}|g' %{SOURCE1} > insights-register.service
 %else
-sed -e 's|@bindir@|%{_bindir}|g' %{SOURCE11} > insights-register.service
+sed -e 's|@bindir@|%{_bindir}|g' -e 's|@libexecdir@|%{_libexecdir}|g' %{SOURCE11} > insights-register.service
+%endif
+%if 0%{?rhel} == 7
+sed -i '/^ExecCondition=/d' insights-register.service
 %endif
 sed -e 's|@sysconfdir@|%{_sysconfdir}|g' %{SOURCE2} > insights-unregister.path
 sed -e 's|@sysconfdir@|%{_sysconfdir}|g' -e 's|@bindir@|%{_bindir}|g' %{SOURCE3} > insights-unregister.service
@@ -97,15 +102,17 @@ sed -e 's|@libexecdir@|%{_libexecdir}|g' %{SOURCE14} > rhccc-disable-rhui-repos.
 # rhcd or yggdrasil
 %if 0%{?rhel} >= 10 || 0%{?fedora}
 # yggdrasil
-sed -e 's|@sysconfdir@|%{_sysconfdir}|g' %{SOURCE17} > %{service_name}.path
+sed -e 's|@sysconfdir@|%{_sysconfdir}|g' -e 's|@service_name@|%{service_name}|g' %{SOURCE17} > %{service_name}.path
 sed -e 's|@sysconfdir@|%{_sysconfdir}|g' %{SOURCE18} > %{service_name}-stop.path
 sed -e 's|@sysconfdir@|%{_sysconfdir}|g' %{SOURCE19} > %{service_name}-stop.service
 %else
 # rhcd
-sed -e 's|@sysconfdir@|%{_sysconfdir}|g' %{SOURCE7} > %{service_name}.path
+sed -e 's|@sysconfdir@|%{_sysconfdir}|g' -e 's|@service_name@|%{service_name}|g' %{SOURCE7} > %{service_name}.path
 sed -e 's|@sysconfdir@|%{_sysconfdir}|g' %{SOURCE8} > %{service_name}-stop.path
 sed -e 's|@sysconfdir@|%{_sysconfdir}|g' %{SOURCE9} > %{service_name}-stop.service
 %endif
+install -d rhccc-mtls-consumer.service.d
+sed -e 's|@libexecdir@|%{_libexecdir}|g' %{SOURCE23} > rhccc-mtls-consumer.service.d/rhccc-mtls-consumer.conf
 %endif
 
 %install
@@ -123,6 +130,7 @@ install -m644 %{SOURCE4} -t %{buildroot}%{_presetdir}/
 
 install -d %{buildroot}%{_libexecdir}
 install %{SOURCE13} %{buildroot}%{_libexecdir}
+install -m755 %{SOURCE21} %{buildroot}%{_libexecdir}/rhccc-owner-allows-mtls-consumer.py
 install -m644 %{SOURCE15} -t %{buildroot}%{_presetdir}/
 
 %if 0%{?rhel} >= 8 || 0%{?fedora}
@@ -130,6 +138,8 @@ install -m644 %{SOURCE15} -t %{buildroot}%{_presetdir}/
 install -D -m644 %{service_name}.path %{buildroot}%{_unitdir}/
 install -D -m644 %{service_name}-stop.path %{buildroot}%{_unitdir}/
 install -D -m644 %{service_name}-stop.service %{buildroot}%{_unitdir}/
+install -d %{buildroot}%{_unitdir}/%{service_name}.service.d
+install -m644 rhccc-mtls-consumer.service.d/rhccc-mtls-consumer.conf %{buildroot}%{_unitdir}/%{service_name}.service.d/
 %if 0%{?rhel} >= 10 || 0%{?fedora}
 install -m644 %{SOURCE20} -t %{buildroot}%{_presetdir}/
 %else
@@ -263,10 +273,12 @@ fi
 %{_unitdir}/insights-unregister.service
 %{_unitdir}/insights-unregistered.path
 %{_unitdir}/insights-unregistered.service
+%{_libexecdir}/rhccc-owner-allows-mtls-consumer.py
 %if 0%{?rhel} >= 8 || 0%{?fedora}
 %{_unitdir}/%{service_name}-stop.path
 %{_unitdir}/%{service_name}-stop.service
 %{_unitdir}/%{service_name}.path
+%{_unitdir}/%{service_name}.service.d/rhccc-mtls-consumer.conf
 %endif
 
 
@@ -459,14 +471,29 @@ fi
 %{_unitdir}/insights-unregistered.path
 %{_unitdir}/insights-unregistered.service
 %{_unitdir}/rhccc-disable-rhui-repos.service
+%{_libexecdir}/rhccc-owner-allows-mtls-consumer.py
 %if 0%{?rhel} >= 8 || 0%{?fedora}
 %{_unitdir}/%{service_name}-stop.path
 %{_unitdir}/%{service_name}-stop.service
 %{_unitdir}/%{service_name}.path
+%{_unitdir}/%{service_name}.service.d/rhccc-mtls-consumer.conf
 %endif
 
 
 %changelog
+* Wed May 06 2026 Chris Snyder <csnyder@redhat.com> - 1-17
+- Address CCT-2110 review: use RHSM D-Bus Consumer.GetOrg instead of parsing
+  current_owner.json; install ExecCondition as a drop-in on the cloud daemon
+  service and point path units at %{service_name}.service again; drop
+  rhccc-start-cloud-daemon.service and the extra openssl Requires.
+
+* Wed Apr 29 2026 Chris Snyder <csnyder@redhat.com> - 1-16
+- Skip insights-client registration and yggdrasil/rhcd start for anonymous RHSM
+  consumers (CCT-2110): ExecCondition on owner cache vs consumer cert UUID,
+  PathChanged on cert and current_owner.json, indirect start via
+  rhccc-start-cloud-daemon.service.
+- Add explicit openssl dependency for the owner check helper.
+
 * Wed Sep 14 2022 Gael Chamoulaud <gchamoul@redhat.com> - 1-1
 - Remove preset files from %post directive
 

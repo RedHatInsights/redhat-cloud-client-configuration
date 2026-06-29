@@ -1,0 +1,7 @@
+# SPDX-License-Identifier: GPL-2.0-or-later
+#
+# Drop-in: skip starting the cloud device daemon while the RHSM consumer is
+# anonymous (see rhccc-owner-allows-mtls-consumer.py).
+
+[Service]
+ExecCondition=@libexecdir@/rhccc-owner-allows-mtls-consumer.py
