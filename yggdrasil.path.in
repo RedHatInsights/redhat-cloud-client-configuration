@@ -13,7 +13,8 @@ Description=Automatically start yggdrasil with path watch
 Documentation=man:yggd(1)
 
 [Path]
-PathExists=@sysconfdir@/pki/consumer/cert.pem
+PathChanged=@sysconfdir@/pki/consumer/cert.pem
+Unit=@service_name@.service
 
 [Install]
 WantedBy=multi-user.target

@@ -1,0 +1,8 @@
+# Drop-in: skip starting the cloud device daemon while the RHSM consumer is anonymous
+# (see rhccc-owner-allows-mtls-consumer.py).
+# (At the time of writing the cloud device daemon is either yggdrasil/yggd or rhcd)
+# This file was built and installed for (@service_name@.service)
+
+[Service]
+ExecCondition=+@libexecdir@/rhccc-owner-allows-mtls-consumer.py
+ExecStopPost=+/bin/systemctl mask --now @service_name@-pathexists.path

@@ -16,6 +16,7 @@ After=network-online.target
 
 [Service]
 Type=simple
+ExecCondition=@libexecdir@/rhccc-owner-allows-mtls-consumer.py
 ExecStart=@bindir@/insights-client --register
 Restart=no
 WatchdogSec=900

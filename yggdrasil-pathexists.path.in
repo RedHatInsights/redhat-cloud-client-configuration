@@ -1,0 +1,52 @@
+# This file is part of yggdrasil.
+#
+# Any changes made to this file will be overwritten during a software update. To
+# override a parameter in this file, create a drop-in file, typically located at
+# /etc/systemd/system/yggdrasil-pathexists.path.d/override.conf. Put the desired
+# overrides in that file and reload systemd.
+#
+# For more information about systemd drop-in files, see systemd.unit(5).
+#
+# This separate systemd path unit is necessary due primarily to this line
+# from the systemd.path man page:
+# "When a service unit triggered by a path unit terminates (regardless
+# whether it exited successfully or failed), monitored paths are checked
+# immediately again, and the service accordingly restarted instantly."
+#
+# PathExists triggers as soon as the file indicated by the value of the
+# directive goes from nonexistent to existent (as soon as the matching path
+# is created) and will check once again for path existence as soon as the
+# associated service unit exits (or in the case of an ExecCondition on the
+# service unit, as soon as the ExecCondition finishes running if it returns
+# false / non-zero exit code.). This means that very quickly the path unit
+# using PathExists will be put into a failed state by systemd (due to hitting
+# the trigger limit). As it might be alarming for sysadmins to see a failed
+# systemd unit (especially when the overall system of rhccc expects
+# the path unit containing PathExists to only execute once per new
+# registration) and in order to allow us to trigger the
+# insights-register.service again when the consumer certificate is updated,
+# we therefore need two separate triggers for insights-register.service.
+# One for existance that only runs once when the consumer certificate is
+# created and is reset when the consumer certificate is deleted (this file).
+# And a second path unit using PathChanged to check a changed consumer
+# certificate to see if the system is now registered to a non-anonymous
+# organization (insights-register.path).
+#
+# As an implementation detail, to allow for the trigger on path existence
+# but prevent unneeded busy-looping, the insights-register.service now
+# has an ExecStopPost which masks this path unit. ExecStopPost is executed
+# after the service defined in a service unit exits (or in our case after
+# the ExecCondition runs and prevents the main ExecStart from running).
+# ExecStop direcives only run after the ExecStart runs and exits.
+
+
+[Unit]
+Description=Automatically start yggdrasil with path watch (newly registered)
+Documentation=man:yggd(1)
+
+[Path]
+PathExists=@sysconfdir@/pki/consumer/cert.pem
+Unit=@service_name@.service
+
+[Install]
+WantedBy=multi-user.target
