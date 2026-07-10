@@ -1,6 +1,6 @@
 Name:           redhat-cloud-client-configuration
-Version:        1
-Release:        15%{?dist}
+Version:        1.16
+Release:        1%{?dist}
 Summary:        Red Hat cloud client configuration
 License:        GPL-2.0-or-later
 URL:            https://github.com/RedHatInsights/redhat-cloud-client-configuration
@@ -509,6 +509,14 @@ fi
 
 
 %changelog
+* Fri Jul 10 2026 Christopher Snyder <csnyder@redhat.com> 1.16-1
+- fix: Require the correct minimum version of subscription-manager for anon
+  registration (#29) (cnsnyder@users.noreply.github.com)
+- Skip Insights and cloud daemon start for anonymous RHSM owners (CCT-2110)
+  (#26) (cnsnyder@users.noreply.github.com)
+- docs: add AGENTS.md for AI-assisted development (#28) (pbartiko@redhat.com)
+- chore: add rhel-10 to Packit COPR build targets (#27) (pbartiko@redhat.com)
+
 * Wed Sep 14 2022 Gael Chamoulaud <gchamoul@redhat.com> - 1-1
 - Remove preset files from %post directive
 
