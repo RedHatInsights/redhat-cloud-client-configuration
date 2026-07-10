@@ -51,7 +51,7 @@ Source100: LICENSE
 BuildArch:      noarch
 
 Requires:      insights-client
-Requires:      subscription-manager
+Requires:      subscription-manager >= 1.29.54
 
 %if 0%{?rhel} >= 8 || 0%{?fedora}
 Requires:      rhc
