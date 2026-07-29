@@ -51,7 +51,11 @@ Source100: LICENSE
 BuildArch:      noarch
 
 Requires:      insights-client
+%if 0%{?rhel} >= 10
+Requires:      subscription-manager >= 1.30.15
+%else
 Requires:      subscription-manager >= 1.29.54
+%endif
 
 %if 0%{?rhel} >= 8 || 0%{?fedora}
 Requires:      rhc
@@ -69,7 +73,11 @@ Configure client autoregistration for cloud environments
 Summary: Red Hat cloud client configuration - CDN
 
 Requires:      insights-client
-Requires:      subscription-manager
+%if 0%{?rhel} >= 10
+Requires:      subscription-manager >= 1.30.15
+%else
+Requires:      subscription-manager >= 1.29.54
+%endif
 %if 0%{?rhel} >= 8 || 0%{?fedora}
 Requires:      rhc
 %endif
